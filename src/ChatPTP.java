@@ -129,7 +129,7 @@ public class ChatPTP implements ActionListener, Printer{
 			servThread.start();
 			
 			socOut = new Socket(hostName, port);
-			print("Connected to other host!");
+			print("Connected to other host!\n");
 			
 			socWrite = new PrintWriter( socOut.getOutputStream());
 			socWrite.println("BLEEEERG");

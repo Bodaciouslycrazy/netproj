@@ -1,4 +1,7 @@
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.*;
 import java.net.*;
 import java.io.*;
 
@@ -18,22 +21,32 @@ public class Reciever implements Runnable{
 		
 		try 
 		{
-			out.print("Starting server...");
+			out.print("Starting server...\n");
 			ServerSocket serv = new ServerSocket(port);
 			Socket client = serv.accept();
 			
-			out.print("Accepted a client!");
+			out.print("Accepted a client!\n");
 			
 			
 			BufferedReader reader = new BufferedReader( new InputStreamReader( client.getInputStream() ) );
 			while(true)
 			{
-				out.print( reader.readLine() );
+				String line = reader.readLine();
+				
+				//Since swing is not thread safe, we must call invodeAndWait with a new runnable.
+				SwingUtilities.invokeAndWait( new Runnable() {
+					public void run()
+					{
+						out.print(line);
+					}
+				});
+				
+				//out.print( reader.readLine() );
 			}
 			
 			
 		} 
-		catch (IOException e)
+		catch (Exception e)
 		{
 			out.print("There was an error in Reciever class.\n");
 			out.print(e.toString() + "\n");
