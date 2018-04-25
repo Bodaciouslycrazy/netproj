@@ -7,9 +7,10 @@ import java.io.*;
 
 public class Reciever implements Runnable{
 
+	//Reference for where to print/disconnect.
 	Printer out;
+	
 	int port;
-	boolean connected = true;
 	
 	public Reciever(Printer print, int prt)
 	{
@@ -34,7 +35,9 @@ public class Reciever implements Runnable{
 			
 			BufferedReader reader = new BufferedReader( new InputStreamReader( client.getInputStream() ) );
 			
-			while(connected)
+			
+			//Keep reading lines until you get an interrupt.
+			while(true)
 			{
 				String line = reader.readLine();
 				if(line == null) break;
@@ -46,6 +49,7 @@ public class Reciever implements Runnable{
 		} 
 		catch (Exception e)
 		{
+			//If interrupted, don't throw any errors.
 			if(e.getClass() == InterruptedException.class)
 			{
 				out.print("Server disconnected.");

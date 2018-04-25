@@ -13,6 +13,8 @@ import java.net.*;
 import java.io.*;
 
 public class ChatPTP implements ActionListener, Printer{
+	
+	//*****All GUI ELEMENTS******
 	JFrame mainFrame;
 	
 	JTextField input;
@@ -24,12 +26,14 @@ public class ChatPTP implements ActionListener, Printer{
 	JButton connectButton;
 	JButton disconnectButton;
 	
+	//Used so that you can't press the connect button twice
 	private boolean connected = false;
-	
-	//JPanel panel;
 	
 	SpringLayout layout;
 	
+	/**
+	 * Creates all the UI classes and sets up the window.
+	 */
 	public ChatPTP()
 	{
 		//make a window
@@ -104,12 +108,20 @@ public class ChatPTP implements ActionListener, Printer{
 		ChatPTP chat = new ChatPTP();
 	}
 	
+	/**
+	 * Simply appends some text to the display. Pretty much everything can go here.
+	 */
 	public void print(String text)
 	{
 		//Should I put a mutex here to help with multithreading?
 		display.append(text);
 	}
 	
+	/**
+	 * main
+	 * sets up the GUI.
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		
 		SwingUtilities.invokeLater(new Runnable() {
@@ -120,15 +132,22 @@ public class ChatPTP implements ActionListener, Printer{
 	}
 	
 	
-	//**************************************NON GUI STUFF*******************************************************
 	
+	
+	//****************NON GUI STUFF*******************************
 	Socket socOut;
-	
 	PrintWriter socWrite;
-	//BufferedReader socRead;
 	
 	Thread servThread;
 	
+	/**
+	 * Tries to connect to another host.
+	 * 
+	 * Creates a new server thread to recieve another client.
+	 * Then tries to connect to another client with the give ip/port
+	 * @param hostName - an IP Address 
+	 * @param port
+	 */
 	public void connectToHost(String hostName, int port)
 	{
 		if(connected)
@@ -138,12 +157,15 @@ public class ChatPTP implements ActionListener, Printer{
 		
 		try
 		{
+			//Create and start server thread.
 			servThread = new Thread( new Reciever(this, port) );
 			servThread.start();
 			
+			//Connect to other server.
 			socOut = new Socket(hostName, port);
 			print("Connected to other host!\n");
 			
+			//Make a print writer for the socket output.
 			socWrite = new PrintWriter( socOut.getOutputStream() );
 		}
 		catch(Exception e)
@@ -154,6 +176,10 @@ public class ChatPTP implements ActionListener, Printer{
 		}
 	}
 	
+	
+	/**
+	 * Disconnects all sockets and writers.
+	 */
 	@Override
 	public void disconnect()
 	{
@@ -190,6 +216,10 @@ public class ChatPTP implements ActionListener, Printer{
 		}
 	}
 
+	
+	/**
+	 * Recieves various actions from the UI.
+	 */
 	@Override
 	public void actionPerformed(ActionEvent evt) {
 		if(evt.getSource() == connectButton)
@@ -218,7 +248,10 @@ public class ChatPTP implements ActionListener, Printer{
 		}
 	}
 	
-	
+	/**
+	 * Sends text from the input bar through the socket to the other host.
+	 * Also prints text here.
+	 */
 	public void sendMessage()
 	{
 		if(socWrite != null)
