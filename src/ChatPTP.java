@@ -22,6 +22,9 @@ public class ChatPTP implements ActionListener, Printer{
 	JTextField targetAddress;
 	JTextField targetPort;
 	JButton connectButton;
+	JButton disconnectButton;
+	
+	private boolean connected = false;
 	
 	//JPanel panel;
 	
@@ -50,12 +53,15 @@ public class ChatPTP implements ActionListener, Printer{
 		targetPort.setColumns(8);
 		connectButton = new JButton("Connect");
 		connectButton.addActionListener(this);
+		disconnectButton = new JButton("Disconnect");
+		disconnectButton.addActionListener(this);
 		
-		connectPanel.add( new JLabel("Connect to: "));
+		connectPanel.add( new JLabel("Address: "));
 		connectPanel.add( targetAddress);
 		connectPanel.add( new JLabel("Port: "));
 		connectPanel.add( targetPort);
 		connectPanel.add( connectButton);
+		connectPanel.add(disconnectButton);
 		//**********************************************
 		
 		//***********************SETUP MAIN COMPONENTS******
@@ -100,7 +106,7 @@ public class ChatPTP implements ActionListener, Printer{
 	
 	public void print(String text)
 	{
-		//Should I put a mutex here to solve multithreading?
+		//Should I put a mutex here to help with multithreading?
 		display.append(text);
 	}
 	
@@ -121,22 +127,65 @@ public class ChatPTP implements ActionListener, Printer{
 	PrintWriter socWrite;
 	//BufferedReader socRead;
 	
+	Thread servThread;
+	
 	public void connectToHost(String hostName, int port)
 	{
+		if(connected)
+			return;
+		
+		connected = true;
+		
 		try
 		{
-			Thread servThread = new Thread( new Reciever(this, port) );
+			servThread = new Thread( new Reciever(this, port) );
 			servThread.start();
 			
 			socOut = new Socket(hostName, port);
 			print("Connected to other host!\n");
 			
-			socWrite = new PrintWriter( socOut.getOutputStream());
-			socWrite.println("BLEEEERG");
+			socWrite = new PrintWriter( socOut.getOutputStream() );
 		}
 		catch(Exception e)
 		{
+			connected = false;
 			print("Error connecting to host.\n");
+			print(e.toString() + "\n");
+		}
+	}
+	
+	@Override
+	public void disconnect()
+	{
+		connected = false;
+		
+		try
+		{
+			if(socOut != null)
+			{
+				socOut.close();
+			}
+			
+			if(socWrite != null)
+			{
+				socWrite.close();
+			}
+			
+			socOut = null;
+			socWrite = null;
+			
+			if( servThread != null && servThread.isAlive())
+			{
+				servThread.interrupt();
+			}
+			
+			servThread = null;
+			
+			print("Disconnected.\n");
+		}
+		catch(Exception e)
+		{
+			print("Error Disconnecting.\n");
 			print(e.toString() + "\n");
 		}
 	}
@@ -150,17 +199,38 @@ public class ChatPTP implements ActionListener, Printer{
 				int p = Integer.parseInt( targetPort.getText() );
 				connectToHost( targetAddress.getText(), p);
 			}
-			catch(Exception e)
+			catch(NumberFormatException e)
 			{
-				print("BeepBoop, error:\n");
-				print(e.toString() + "\n");
+				print("Type a real port number, dingus.\n");
 			}
 		}
 		else if(evt.getSource() == input)
 		{
+			sendMessage();
+		}
+		else if(evt.getSource() == disconnectButton)
+		{
+			disconnect();
+		}
+		else
+		{
+			print("Didn't recognize that ActionEvent!\n");
+		}
+	}
+	
+	
+	public void sendMessage()
+	{
+		if(socWrite != null)
+		{
 			print("You: " + input.getText() + "\n");
-			socWrite.println("Blerg: " + input.getText());
+			socWrite.println(input.getText());
+			socWrite.flush();
 			input.setText("");
+		}
+		else
+		{
+			print("You are not connected to another host right now.\n");
 		}
 	}
 
